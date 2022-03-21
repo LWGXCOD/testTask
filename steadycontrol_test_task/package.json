@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@bludot/univ-router": "^1.0.13",
+    "cors": "^2.8.5"
+  }
+}

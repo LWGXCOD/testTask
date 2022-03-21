@@ -1,0 +1,108 @@
+<html>
+<head>
+    <title>test</title>
+    <meta charset="utf-8">
+    <style>
+        [data-tooltip] {
+            position: relative;
+        }
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            background: #ffffff;
+            color: #000000;
+            opacity: 0;
+            z-index: 1;
+            border: black 1px solid;
+        }
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            top: 0;
+            left: 100px;
+        }
+    </style>
+</head>
+<body>
+<div id="block"></div>
+<script>
+
+  (async function() {
+    renderHTML(await getData())
+  })()
+
+  async function getData() {
+    let response = await fetch('http://localhost:3000/api/')
+    let json
+    if (response.ok) {
+      json = await response.json()
+    } else {
+      alert('Ошибка HTTP: ' + response.status)
+    }
+    return json
+  }
+
+  function renderHTML(humans) {
+
+    let groupTypes = []
+
+    humans[0].group.forEach(group => {
+      groupTypes.push(group.type)
+    })
+
+    const config = {
+      groupTypes
+    }
+
+    const hierarchy = {}
+
+    humans.forEach(human => {
+      let currentHierarchyObject = hierarchy
+      config.groupTypes.forEach((groupType, groupTypeIndex) => {
+        const groupValue = human.group.find(group => group.type === groupType).name
+        if (!currentHierarchyObject[groupValue]) {
+          if (groupTypeIndex !== config.groupTypes.length - 1) {
+            currentHierarchyObject[groupValue] = {}
+          } else {
+            currentHierarchyObject[groupValue] = []
+          }
+        }
+        currentHierarchyObject = currentHierarchyObject[groupValue]
+      })
+      currentHierarchyObject.push(human)
+    })
+
+    const block = document.getElementById('block')
+
+    const insertUsers = (data, block) => {
+
+      const ul = document.createElement('ul')
+      block.append(ul)
+      data.forEach(human => {
+        const li = document.createElement('li')
+        li.dataset.tooltip = `${human.city.name}, ${human.city.data}`
+        ul.append(li)
+        li.innerText = human.name
+      })
+    }
+
+    const insertList = (data, block) => {
+      const ul = document.createElement('ul')
+      block.append(ul)
+      console.log(Object.keys(data))
+      Object.keys(data).forEach((groupValue) => {
+        const li = document.createElement('li')
+        ul.append(li)
+        li.innerText = groupValue
+        if (!Array.isArray(data[groupValue])) {
+          insertList(data[groupValue], li)
+        } else {
+          insertUsers(data[groupValue], li)
+        }
+      })
+    }
+
+    insertList(hierarchy, block)
+  }
+</script>
+</body>
+</html>
